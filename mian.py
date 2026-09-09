@@ -323,7 +323,7 @@ def main():
         listen='0.0.0.0',
         port=port,
         url_path=BOT_TOKEN,
-        webhook_url=f"{webhook_url}/{BOT_TOKEN}"
+        webhook_url = os.environ.get('WEBHOOK_URL', f"https://xiafa.onrender.com/{BOT_TOKEN}")
     )
 
 if __name__ == "__main__":
