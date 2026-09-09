@@ -35,6 +35,7 @@ def save_data(data):
     except Exception as e:
         logger.error(f"Lỗi khi lưu dữ liệu: {e}")
 
+# Khởi tạo data_store
 data_store = load_data()
 
 # ==== THAY TOKEN CỦA BẠN VÀO ĐÂY ====
@@ -311,11 +312,18 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     port = int(os.environ.get('PORT', 8080))
+    
+    # Lấy URL từ environment hoặc dùng mặc định
+    webhook_url = os.environ.get('WEBHOOK_URL', f"https://xiafa.onrender.com")
+    webhook_url = webhook_url.rstrip('/')
+    
+    logger.info(f"Starting bot with webhook at {webhook_url}/{BOT_TOKEN}")
+    
     app.run_webhook(
         listen='0.0.0.0',
         port=port,
         url_path=BOT_TOKEN,
-        webhook_url=f"https://your-app-name.onrender.com/{BOT_TOKEN}"
+        webhook_url=f"{webhook_url}/{BOT_TOKEN}"
     )
 
 if __name__ == "__main__":
