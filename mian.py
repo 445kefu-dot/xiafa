@@ -38,6 +38,8 @@ data_store = load_data()
 BOT_TOKEN = "8825283140:AAEW53jACQKb1pwGDN5-6ASKKEhWdQf6dvs"
 
 def parse_message(text):
+    # Thay dấu * bằng khoảng trống
+    text = text.replace('*', ' ')
     parts = text.strip().split()
     if len(parts) == 3:
         try:
@@ -136,7 +138,12 @@ def export_to_excel(data_list, date_str):
     return filename
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
+    # Lấy text từ tin nhắn thường hoặc caption của ảnh/media
+    text = update.message.text or update.message.caption
+    if not text:
+        return
+    text = text.strip()
+    
     today_str = datetime.now().strftime("%Y-%m-%d")
     current_time = datetime.now().strftime("%H:%M")
     
@@ -268,7 +275,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Gửi tin nhắn với định dạng:\n"
         "`<Tên> <Số tiền> <Tỷ lệ>`\n\n"
         "**Ví dụ:**\n"
-        "`江山 4000 6.9`\n\n"
+        "`江山 4000 6.9`\n"
+        "`江山 6000*6.77` (dấu * = khoảng trống)\n\n"
         "📊 **Lệnh:**\n"
         "/today - Xem dữ liệu hôm nay\n"
         "/export - Xuất Excel hôm nay\n"
@@ -283,7 +291,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "**1. Thêm dữ liệu:**\n"
         "Gửi tin nhắn với 3 thông tin:\n"
         "`<Tên> <Số tiền> <Tỷ lệ>`\n"
-        "Ví dụ: `江山 4000 6.9`\n\n"
+        "Ví dụ: `江山 4000 6.9`\n"
+        "Hoặc dùng dấu * thay khoảng trống: `江山 6000*6.77`\n\n"
         "**2. Xem dữ liệu:**\n"
         "`/today` - Xem dữ liệu trong ngày\n\n"
         "**3. Xuất Excel:**\n"
@@ -293,7 +302,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• Định dạng chuyên nghiệp\n"
         "• Tổng hợp số tiền và phí trung bình\n"
         "• Tự động căn chỉnh và tô màu\n"
-        "• Sheet tổng hợp khi dùng /export_all",
+        "• Sheet tổng hợp khi dùng /export_all\n\n"
+        "**5. Gửi kèm ảnh:**\n"
+        "Bot vẫn lấy text trong caption của ảnh.",
         parse_mode='Markdown'
     )
 
@@ -304,7 +315,10 @@ def main():
     app.add_handler(CommandHandler("today", today))
     app.add_handler(CommandHandler("export", export))
     app.add_handler(CommandHandler("export_all", export_all))
+    # Text thường
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    # Ảnh / media có caption
+    app.add_handler(MessageHandler(filters.CAPTION & ~filters.COMMAND, handle_message))
     
     port = int(os.environ.get('PORT', 8080))
     webhook_url = f"https://xiafa.onrender.com/{BOT_TOKEN}"
