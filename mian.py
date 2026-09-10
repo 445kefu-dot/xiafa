@@ -15,8 +15,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Sử dụng thư mục /tmp để lưu file (Render có quyền ghi)
-DATA_FILE = '/tmp/data_store.json'
+DATA_FILE = 'data_store.json'
 
 def load_data():
     try:
@@ -31,17 +30,10 @@ def save_data(data):
     try:
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        logger.info(f"Đã lưu dữ liệu: {data}")
     except Exception as e:
         logger.error(f"Lỗi khi lưu dữ liệu: {e}")
 
-# Hàm kiểm tra và tạo file nếu chưa có
-def init_data_file():
-    if not os.path.exists(DATA_FILE):
-        save_data({})
-    return load_data()
-
-data_store = init_data_file()
+data_store = load_data()
 
 BOT_TOKEN = "8825283140:AAEW53jACQKb1pwGDN5-6ASKKEhWdQf6dvs"
 
@@ -61,8 +53,7 @@ def parse_message(text):
     return None
 
 def export_to_excel(data_list, date_str):
-    filename = f"/tmp/data_{date_str}.xlsx"
-    
+    filename = f"data_{date_str}.xlsx"
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = f"Data {date_str}"
@@ -199,7 +190,7 @@ async def export(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open(filename, 'rb') as f:
             await update.message.reply_document(
                 document=f,
-                filename=f"data_{today_str}.xlsx",
+                filename=filename,
                 caption=f"📊 Excel export ngày {today_str}\n📈 Tổng số giao dịch: {len(data_store[today_str])}"
             )
         os.remove(filename)
@@ -215,7 +206,7 @@ async def export_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     processing_msg = await update.message.reply_text("⏳ Đang tạo file Excel tổng hợp...")
     try:
-        filename = f"/tmp/data_all_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = f"data_all_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         wb = openpyxl.Workbook()
         
         for date_str, records in data_store.items():
@@ -262,7 +253,7 @@ async def export_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open(filename, 'rb') as f:
             await update.message.reply_document(
                 document=f,
-                filename=f"data_all_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                filename=filename,
                 caption=f"📊 Excel tổng hợp tất cả dữ liệu\n📅 Tổng số ngày: {len(data_store)}"
             )
         os.remove(filename)
