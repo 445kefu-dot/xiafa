@@ -138,7 +138,7 @@ def export_to_excel(data_list, date_str):
     return filename
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Lấy text từ tin nhắn thường hoặc caption của ảnh/media
+    # Lấy text từ tin nhắn thường hoặc caption của ảnh
     text = update.message.text or update.message.caption
     if not text:
         return
@@ -156,14 +156,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["时间"] = current_time
         data_store[today_str].append(data)
         save_data(data_store)
-        
-        reply = (f"✅ Đã trích xuất thành công!\n"
-                 f"📌 三方: {data['三方']}\n"
-                 f"💰 金额: {data['金额']}\n"
-                 f"📊 费率: {data['费率']}\n"
-                 f"🕐 时间: {data['时间']}\n\n"
-                 f"📊 Dùng /export để xuất Excel")
-        await update.message.reply_text(reply)
+        # Im lặng — không reply gì cả
 
 async def today(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today_str = datetime.now().strftime("%Y-%m-%d")
@@ -191,14 +184,21 @@ async def export(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📭 Chưa có dữ liệu nào để xuất Excel.")
         return
     
+    records = data_store[today_str]
+    total_amount = sum(float(item['金额'].replace(',', '')) for item in records)
+    avg_rate = sum(float(item['费率']) for item in records) / len(records)
+    
     processing_msg = await update.message.reply_text("⏳ Đang tạo file Excel...")
     try:
-        filename = export_to_excel(data_store[today_str], today_str)
+        filename = export_to_excel(records, today_str)
         with open(filename, 'rb') as f:
             await update.message.reply_document(
                 document=f,
                 filename=filename,
-                caption=f"📊 Excel export ngày {today_str}\n📈 Tổng số giao dịch: {len(data_store[today_str])}"
+                caption=(f"📊 {today_str}\n"
+                         f"🧾 {len(records)} giao dịch\n"
+                         f"💰 Tổng: {total_amount:,.0f}\n"
+                         f"📈 Phí TB: {avg_rate:.2f}")
             )
         os.remove(filename)
         await processing_msg.delete()
@@ -277,6 +277,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "**Ví dụ:**\n"
         "`江山 4000 6.9`\n"
         "`江山 6000*6.77` (dấu * = khoảng trống)\n\n"
+        "Bot sẽ **im lặng lưu dữ liệu**, chỉ phản hồi khi bạn dùng lệnh.\n\n"
         "📊 **Lệnh:**\n"
         "/today - Xem dữ liệu hôm nay\n"
         "/export - Xuất Excel hôm nay\n"
@@ -298,13 +299,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "**3. Xuất Excel:**\n"
         "`/export` - Xuất file Excel của ngày hôm nay\n"
         "`/export_all` - Xuất file Excel tổng hợp tất cả dữ liệu\n\n"
-        "**4. Tính năng Excel:**\n"
-        "• Định dạng chuyên nghiệp\n"
-        "• Tổng hợp số tiền và phí trung bình\n"
-        "• Tự động căn chỉnh và tô màu\n"
-        "• Sheet tổng hợp khi dùng /export_all\n\n"
-        "**5. Gửi kèm ảnh:**\n"
-        "Bot vẫn lấy text trong caption của ảnh.",
+        "**4. Gửi kèm ảnh:**\n"
+        "Bot vẫn lấy text trong caption của ảnh.\n\n"
+        "**5. Lưu ý:**\n"
+        "Bot không trả lời từng tin nhắn, chỉ phản hồi khi có lệnh.",
         parse_mode='Markdown'
     )
 
